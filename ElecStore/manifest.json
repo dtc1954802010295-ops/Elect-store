@@ -1,0 +1,16 @@
+{
+    "name": "ElecStore Pro v3",
+    "short_name": "ElecStore",
+    "description": "Hệ thống quản lý cửa hàng điện tử chuyên nghiệp",
+    "start_url": "ElecStore_App_v3.html",
+    "display": "standalone",
+    "background_color": "#0e0f13",
+    "theme_color": "#4f9eff",
+    "icons": [
+      {
+        "src": "https://cdn-icons-png.flaticon.com/512/1162/1162456.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }

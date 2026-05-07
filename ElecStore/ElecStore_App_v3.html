@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ElecStore — Quản lý cửa hàng điện tử v3</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0f13;--bg2:#14161c;--bg3:#1c1f28;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --accent:#4f9eff;--green:#3ecf8e;--red:#f87171;--amber:#fbbf24;--purple:#7b5ff0;--teal:#2dd4bf;
+  --text:#e8eaf0;--text2:#8b90a0;--text3:#555a6a;
+  --fh:'Segoe UI',system-ui,sans-serif;--fm:'Consolas','Courier New',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--fh);min-height:100vh;display:flex;flex-direction:column}
+#toast-c{position:fixed;top:14px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:9px 14px;font-size:12px;font-family:var(--fm);opacity:0;transform:translateX(16px);transition:all .2s;pointer-events:none;max-width:300px}
+.toast.show{opacity:1;transform:none}
+.toast.ok{border-color:rgba(62,207,142,.3);color:var(--green)}
+.toast.err{border-color:rgba(248,113,113,.3);color:var(--red)}
+.toast.info{border-color:rgba(79,158,255,.3);color:var(--accent)}
+.wrap{display:flex;flex:1;min-height:100vh}
+.side{width:215px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.25rem 0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:hidden}
+.logo{padding:0 1.25rem 1.2rem;border-bottom:1px solid var(--border);margin-bottom:.8rem}
+.logo-r{display:flex;align-items:center;gap:9px}
+.logo-ic{width:32px;height:32px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.logo-ic svg{width:16px;height:16px;fill:#000}
+.logo-nm{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.logo-nm span{color:var(--accent)}
+.logo-tag{font-size:9px;color:var(--text3);font-family:var(--fm);margin-top:2px;margin-left:41px;display:flex;align-items:center;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot-g{background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+nav{flex:1;padding:0 .6rem;overflow-y:auto}
+.nav-g{font-size:9px;color:var(--text3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.08em;padding:.6rem .7rem .3rem;margin-top:.3rem}
+.nav-i{display:flex;align-items:center;gap:9px;padding:.55rem .7rem;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .12s;margin-bottom:1px;user-select:none}
+.nav-i:hover{background:var(--bg3);color:var(--text)}
+.nav-i.on{background:rgba(79,158,255,.12);color:var(--accent)}
+.nav-i svg{width:15px;height:15px;flex-shrink:0}
+.side-foot{padding:1rem 1.25rem 0;border-top:1px solid var(--border);font-size:10px;color:var(--text3);font-family:var(--fm);line-height:1.8}
+.main{flex:1;padding:1.75rem 2rem;overflow:auto}
+.page{display:none}.page.on{display:block}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem}
+.pt{font-size:21px;font-weight:800;letter-spacing:-.5px}
+.pt span{color:var(--accent)}
+.btn-r{display:flex;gap:.55rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.48rem .95rem;border-radius:7px;font-size:12.5px;font-weight:600;font-family:var(--fh);cursor:pointer;border:none;transition:all .12s;line-height:1}
+.btn svg{width:14px;height:14px;flex-shrink:0}
+.bp{background:var(--accent);color:#000}.bp:hover{background:#79b8ff}
+.bg2{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}.bg2:hover{border-color:var(--accent);color:var(--accent)}
+.bd{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.2)}.bd:hover{background:rgba(248,113,113,.22)}
+.bgr{background:rgba(62,207,142,.12);color:var(--green);border:1px solid rgba(62,207,142,.2)}.bgr:hover{background:rgba(62,207,142,.22)}
+.bam{background:rgba(251,191,36,.12);color:var(--amber);border:1px solid rgba(251,191,36,.2)}.bam:hover{background:rgba(251,191,36,.22)}
+.bsm{padding:.28rem .55rem;font-size:11px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:.85rem;margin-bottom:1.5rem}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.1rem;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc.bl::before{background:var(--accent)}.sc.gr::before{background:var(--green)}
+.sc.am::before{background:var(--amber)}.sc.pu::before{background:var(--purple)}.sc.tl::before{background:var(--teal)}
+.slb{font-size:10px;color:var(--text3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem}
+.sv{font-size:23px;font-weight:800;letter-spacing:-1px}
+.sv.bl{color:var(--accent)}.sv.gr{color:var(--green)}.sv.am{color:var(--amber)}.sv.pu{color:var(--purple)}.sv.tl{color:var(--teal)}
+.ss2{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--fm)}
+.warn{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:.6rem 1rem;font-size:11.5px;color:var(--amber);margin-bottom:1rem;font-family:var(--fm);display:flex;align-items:center;gap:7px}
+.tw{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.tt{padding:.8rem 1.1rem;display:flex;align-items:center;gap:.6rem;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.si{flex:1;min-width:160px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:.42rem .7rem;font-size:12.5px;color:var(--text);font-family:var(--fh);outline:none}
+.si:focus{border-color:var(--accent)}.si::placeholder{color:var(--text3)}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1px solid var(--border)}
+th{padding:.6rem 1rem;text-align:left;font-size:9.5px;color:var(--text3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.08em;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;transition:color .1s}
+th:hover{color:var(--text2)}
+th.sort-asc::after{content:' ▲';color:var(--accent);font-size:9px}
+th.sort-desc::after{content:' ▼';color:var(--accent);font-size:9px}
+td{padding:.72rem 1rem;font-size:12.5px;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.tn{font-weight:600;color:var(--text)}
+.tm{font-family:var(--fm);font-size:11.5px}
+.bdg{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:600;font-family:var(--fm)}
+.dg{background:rgba(62,207,142,.13);color:var(--green)}.da{background:rgba(251,191,36,.13);color:var(--amber)}
+.dr{background:rgba(248,113,113,.13);color:var(--red)}.db{background:rgba(79,158,255,.13);color:var(--accent)}
+.dt{background:rgba(45,212,191,.13);color:var(--teal)}
+.empty{text-align:center;padding:2.5rem;color:var(--text3);font-family:var(--fm);font-size:12px}
+/* Pagination */
+.pg{display:flex;align-items:center;gap:6px;padding:.75rem 1.1rem;border-top:1px solid var(--border);justify-content:flex-end}
+.pg-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:.3rem .65rem;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--fm);transition:all .1s}
+.pg-btn:hover:not([disabled]){border-color:var(--accent);color:var(--accent)}
+.pg-btn[disabled]{opacity:.35;cursor:not-allowed}
+.pg-btn.on{background:rgba(79,158,255,.15);border-color:var(--accent);color:var(--accent)}
+.pg-info{font-size:11px;color:var(--text3);font-family:var(--fm);margin-right:auto}
+/* Modal */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.md{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:1.75rem;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.md.wide{width:680px}
+.mtt{font-size:17px;font-weight:800;margin-bottom:1.25rem}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.fgr{display:flex;flex-direction:column;gap:5px}.fgr.full{grid-column:1/-1}
+label{font-size:10px;color:var(--text3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.06em}
+input,select,textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:.55rem .7rem;font-size:12.5px;color:var(--text);font-family:var(--fh);outline:none;width:100%;transition:border-color .12s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:var(--bg3)}
+.ma{display:flex;gap:.6rem;justify-content:flex-end;margin-top:1.25rem}
+/* Cards */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+.card-title{font-size:13px;font-weight:700;margin-bottom:.75rem;display:flex;align-items:center;gap:7px}
+.import-area{border:2px dashed var(--border2);border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:1rem}
+.import-area:hover,.import-area.drag{border-color:var(--accent);background:rgba(79,158,255,.05)}
+.import-area svg{width:32px;height:32px;color:var(--text3);margin:0 auto .6rem}
+.import-area p{font-size:13px;color:var(--text2)}.import-area small{font-size:11px;color:var(--text3);font-family:var(--fm)}
+/* Chart */
+.cw{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.ct{font-size:13px;font-weight:700}
+.bc{display:flex;align-items:flex-end;gap:7px;height:140px}
+.bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.bar{width:100%;border-radius:5px 5px 0 0;background:linear-gradient(180deg,var(--accent),rgba(79,158,255,.3));transition:all .25s;cursor:pointer;min-height:3px}
+.bar.green{background:linear-gradient(180deg,var(--green),rgba(62,207,142,.3))}
+.bar:hover{filter:brightness(1.2)}
+.bl2{font-size:8.5px;color:var(--text3);font-family:var(--fm);text-overflow:ellipsis;overflow:hidden;white-space:nowrap;width:100%;text-align:center}
+.bv{font-size:8px;color:var(--text2);font-family:var(--fm)}
+.info-box{background:rgba(79,158,255,.06);border:1px solid rgba(79,158,255,.18);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.25rem;font-size:12.5px;color:var(--text2);line-height:1.7}
+.info-box strong{color:var(--accent)}
+.info-box ol{padding-left:1.25rem;margin-top:.4rem}
+.info-box li{margin-bottom:.2rem}
+/* Sale items */
+.sale-item{display:flex;align-items:center;gap:8px;padding:.5rem;background:var(--bg3);border-radius:7px;margin-bottom:.4rem}
+.sale-rm{cursor:pointer;color:var(--red);font-size:18px;line-height:1;background:none;border:none;padding:.2rem .4rem;flex-shrink:0}
+/* Receipt */
+.receipt{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:1rem;margin-top:1rem;font-family:var(--fm);font-size:12px}
+.receipt-row{display:flex;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--border)}
+.receipt-row:last-child{border-bottom:none;font-weight:700;color:var(--text);padding-top:.5rem}
+/* Section title */
+.sec-title{font-size:13px;font-weight:700;margin-bottom:.75rem;margin-top:1.5rem}
+/* Loading */
+#lo{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;transition:opacity .35s}
+.spin{width:34px;height:34px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ldt{font-size:11px;color:var(--text3);font-family:var(--fm)}
+</style>
+<!-- Đăng ký PWA vào file HTML -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f9eff">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log("PWA Ready!"))
+      .catch((err) => console.log("SW Error:", err));
+  }
+</script>
+</head>
+<body>
+
+<div id="toast-c"></div>
+<div id="lo"><div class="spin"></div><div class="ldt">Đang tải ElecStore v3...</div></div>
+
+<div class="wrap">
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-r">
+        <div class="logo-ic"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+        <div class="logo-nm">Elec<span>Store</span></div>
+      </div>
+      <div class="logo-tag"><span class="dot dot-g"></span><span>v3.0 Pro</span></div>
+    </div>
+    <nav>
+      <div class="nav-g">Kho hàng</div>
+      <div class="nav-i on" id="n-inv" onclick="gp('inv',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Sản phẩm & Kho
+      </div>
+      <div class="nav-i" id="n-purchase" onclick="gp('purchase',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+        Lịch sử nhập kho
+      </div>
+      <div class="nav-g">Bán hàng</div>
+      <div class="nav-i" id="n-sale" onclick="gp('sale',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Tạo đơn bán hàng
+      </div>
+      <div class="nav-i" id="n-orders" onclick="gp('orders',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Lịch sử đơn hàng
+      </div>
+      <div class="nav-g">Báo cáo & Dữ liệu</div>
+      <div class="nav-i" id="n-stats" onclick="gp('stats',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>
+        Thống kê
+      </div>
+      <div class="nav-i" id="n-sync" onclick="gp('sync',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+        CSV / Backup
+      </div>
+    </nav>
+    <div class="side-foot">
+      <div><span class="dot dot-g"></span> LocalStorage</div>
+      <div id="ft-sync">Sẵn sàng</div>
+      <div>v3.0 — ElecStore Pro</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- INVENTORY -->
+    <div class="page on" id="page-inv">
+      <div class="ph">
+        <div class="pt">Sản phẩm <span>&</span> Kho hàng</div>
+        <div class="btn-r">
+          <button class="btn bam" onclick="openStockAdj()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Nhập kho nhanh
+          </button>
+          <button class="btn bp" onclick="openAdd()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Thêm sản phẩm
+          </button>
+        </div>
+      </div>
+      <div class="sg">
+        <div class="sc bl"><div class="slb">Tổng SP</div><div class="sv bl" id="s-t">0</div><div class="ss2">SKU đang quản lý</div></div>
+        <div class="sc gr"><div class="slb">Còn hàng</div><div class="sv gr" id="s-s">0</div><div class="ss2">tồn kho > 0</div></div>
+        <div class="sc am"><div class="slb">Sắp hết</div><div class="sv am" id="s-l">0</div><div class="ss2">tồn kho ≤ 5</div></div>
+        <div class="sc pu"><div class="slb">Giá trị kho</div><div class="sv pu" id="s-v">0đ</div><div class="ss2">giá nhập × tồn kho</div></div>
+      </div>
+      <div id="lw" class="warn" style="display:none">⚠️ <strong id="ln">0</strong> sản phẩm sắp hết hàng — cần nhập thêm!</div>
+      <div class="tw">
+        <div class="tt">
+          <input class="si" id="sq" placeholder="🔍 Tìm tên, SKU, danh mục..." oninput="invPage=1;rinv()">
+          <select class="si" id="scat" style="max-width:165px" onchange="invPage=1;rinv()">
+            <option value="">Tất cả danh mục</option>
+            <option>Điện thoại</option><option>Laptop</option><option>Máy tính bảng</option>
+            <option>Phụ kiện</option><option>Tai nghe</option><option>Màn hình</option>
+            <option>Camera</option><option>Khác</option>
+          </select>
+          <select class="si" id="spg" style="max-width:100px;flex:0" onchange="invPage=1;rinv()">
+            <option value="10">10/trang</option>
+            <option value="25" selected>25/trang</option>
+            <option value="50">50/trang</option>
+            <option value="999">Tất cả</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="inv-tbl">
+            <thead><tr>
+              <th onclick="sortInv('name')">Sản phẩm</th>
+              <th onclick="sortInv('sku')">SKU</th>
+              <th onclick="sortInv('cat')">Danh mục</th>
+              <th onclick="sortInv('sell')">Giá bán</th>
+              <th onclick="sortInv('buy')">Giá nhập</th>
+              <th onclick="sortInv('stock')">Tồn kho</th>
+              <th>Trạng thái</th>
+              <th onclick="sortInv('created')">Ngày thêm</th>
+              <th>Thao tác</th>
+            </tr></thead>
+            <tbody id="inv-b"></tbody>
+          </table>
+          <div id="inv-e" class="empty" style="display:none">📦 Chưa có sản phẩm. Nhấn "Thêm sản phẩm" để bắt đầu!</div>
+        </div>
+        <div class="pg" id="inv-pg"></div>
+      </div>
+    </div>
+
+    <!-- PURCHASE HISTORY -->
+    <div class="page" id="page-purchase">
+      <div class="ph">
+        <div class="pt">Lịch sử <span>nhập kho</span></div>
+        <button class="btn bam" onclick="openStockAdj()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Nhập kho mới
+        </button>
+      </div>
+      <div class="sg">
+        <div class="sc am"><div class="slb">Lần nhập</div><div class="sv am" id="ph-cnt">0</div><div class="ss2">tổng số phiếu</div></div>
+        <div class="sc pu"><div class="slb">Tổng tiền nhập</div><div class="sv pu" id="ph-total">0đ</div><div class="ss2">chi phí hàng hóa</div></div>
+        <div class="sc bl"><div class="slb">Số lượng nhập</div><div class="sv bl" id="ph-qty">0</div><div class="ss2">tổng sp đã nhập</div></div>
+        <div class="sc gr"><div class="slb">Nhà cung cấp</div><div class="sv gr" id="ph-sup">0</div><div class="ss2">đầu mối khác nhau</div></div>
+      </div>
+      <div class="tw">
+        <div class="tt">
+          <input class="si" id="phq" placeholder="🔍 Tìm sản phẩm, nhà cung cấp..." oninput="phPage=1;rpurchase()">
+        </div>
+        <div style="overflow-x:auto">
+          <table><thead><tr>
+            <th>Ngày nhập</th><th>Sản phẩm</th><th>Số lượng</th><th>Giá nhập/sp</th><th>Thành tiền</th><th>Nhà cung cấp</th><th>Ghi chú</th>
+          </tr></thead>
+          <tbody id="ph-b"></tbody></table>
+          <div id="ph-e" class="empty" style="display:none">📥 Chưa có lịch sử nhập kho.</div>
+        </div>
+        <div class="pg" id="ph-pg"></div>
+      </div>
+    </div>
+
+    <!-- SALE PAGE -->
+    <div class="page" id="page-sale">
+      <div class="ph"><div class="pt">Tạo <span>đơn bán hàng</span></div></div>
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem">
+        <div>
+          <div class="tw" style="padding:1.25rem;margin-bottom:1rem">
+            <div style="font-size:13px;font-weight:700;margin-bottom:.75rem">Chọn sản phẩm</div>
+            <div id="sale-items-c"></div>
+            <button class="btn bg2" style="width:100%;justify-content:center;margin-top:.5rem" onclick="addSaleItem()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Thêm sản phẩm vào đơn
+            </button>
+          </div>
+          <div class="tw" style="padding:1.25rem">
+            <div style="font-size:13px;font-weight:700;margin-bottom:.75rem">Thông tin khách hàng</div>
+            <div class="fg">
+              <div class="fgr"><label>Tên khách hàng</label><input id="sale-cust" placeholder="Nguyễn Văn A"></div>
+              <div class="fgr"><label>Số điện thoại</label><input id="sale-phone" placeholder="0901234567"></div>
+              <div class="fgr full"><label>Ghi chú đơn hàng</label><input id="sale-note" placeholder="Giao hàng, bảo hành..."></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="tw" style="padding:1.25rem;position:sticky;top:1.75rem">
+            <div style="font-size:13px;font-weight:700;margin-bottom:.75rem">Tóm tắt đơn hàng</div>
+            <div id="sale-summary"></div>
+            <div style="margin-top:1rem">
+              <div class="fgr" style="margin-bottom:.6rem"><label>Giảm giá</label>
+                <div style="display:flex;gap:6px">
+                  <input type="number" id="sale-disc" placeholder="0" min="0" oninput="updateSaleSummary()">
+                  <select id="sale-disc-type" style="width:70px;flex:0" onchange="updateSaleSummary()">
+                    <option value="vnd">đ</option><option value="pct">%</option>
+                  </select>
+                </div>
+              </div>
+              <div class="fgr" style="margin-bottom:.75rem"><label>Thanh toán</label>
+                <select id="sale-pay">
+                  <option>Tiền mặt</option><option>Chuyển khoản</option>
+                  <option>Thẻ</option><option>VNPAY/Momo</option><option>Công nợ</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn bp" style="width:100%;justify-content:center" onclick="submitSale()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Xác nhận bán hàng
+            </button>
+            <button class="btn bg2" style="width:100%;justify-content:center;margin-top:.5rem" onclick="clearSale()">Xóa đơn</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDER HISTORY -->
+    <div class="page" id="page-orders">
+      <div class="ph">
+        <div class="pt">Lịch sử <span>đơn hàng</span></div>
+        <button class="btn bg2" onclick="expOrders()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Xuất CSV
+        </button>
+      </div>
+      <div class="sg">
+        <div class="sc gr"><div class="slb">Doanh thu thực</div><div class="sv gr" id="ord-rev">0đ</div><div class="ss2">tổng đơn đã bán</div></div>
+        <div class="sc bl"><div class="slb">Lợi nhuận thực</div><div class="sv bl" id="ord-profit">0đ</div><div class="ss2">đã trừ vốn hàng</div></div>
+        <div class="sc am"><div class="slb">Số đơn</div><div class="sv am" id="ord-cnt">0</div><div class="ss2">đơn đã tạo</div></div>
+        <div class="sc pu"><div class="slb">TB/đơn</div><div class="sv pu" id="ord-avg">0đ</div><div class="ss2">giá trị trung bình</div></div>
+      </div>
+      <div class="tw">
+        <div class="tt">
+          <input class="si" id="ordq" placeholder="🔍 Tìm mã đơn, khách hàng..." oninput="ordPage=1;rorders()">
+          <select class="si" id="ord-pay-f" style="max-width:165px" onchange="ordPage=1;rorders()">
+            <option value="">Tất cả thanh toán</option>
+            <option>Tiền mặt</option><option>Chuyển khoản</option><option>Thẻ</option><option>VNPAY/Momo</option><option>Công nợ</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table><thead><tr>
+            <th>Mã đơn</th><th>Ngày bán</th><th>Khách hàng</th><th>SL</th>
+            <th>Doanh thu</th><th>Lợi nhuận</th><th>Giảm giá</th><th>Thanh toán</th><th>Chi tiết</th>
+          </tr></thead>
+          <tbody id="ord-b"></tbody></table>
+          <div id="ord-e" class="empty" style="display:none">🛒 Chưa có đơn hàng nào.</div>
+        </div>
+        <div class="pg" id="ord-pg"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="page" id="page-stats">
+      <div class="ph">
+        <div class="pt">Thống kê <span>& Báo cáo</span></div>
+        <button class="btn bg2" onclick="expReport()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Xuất báo cáo
+        </button>
+      </div>
+      <div class="sec-title" style="margin-top:0">📦 Tồn kho ước tính</div>
+      <div class="sg">
+        <div class="sc gr"><div class="slb">Doanh thu ước tính</div><div class="sv gr" id="r-r">0đ</div><div class="ss2">nếu bán hết tồn kho</div></div>
+        <div class="sc bl"><div class="slb">Lợi nhuận ước tính</div><div class="sv bl" id="r-p">0đ</div><div class="ss2">(giá bán − giá nhập) × tồn</div></div>
+        <div class="sc am"><div class="slb">Tổng vốn nhập</div><div class="sv am" id="r-c">0đ</div><div class="ss2">giá nhập × tồn kho</div></div>
+        <div class="sc pu"><div class="slb">Biên LN TB</div><div class="sv pu" id="r-m">0%</div><div class="ss2">trung bình toàn danh mục</div></div>
+      </div>
+      <div class="sec-title">💰 Doanh thu thực (đơn hàng)</div>
+      <div class="sg">
+        <div class="sc gr"><div class="slb">Tổng doanh thu</div><div class="sv gr" id="st-rev">0đ</div><div class="ss2">thực tế đã thu</div></div>
+        <div class="sc bl"><div class="slb">Lợi nhuận thực</div><div class="sv bl" id="st-profit">0đ</div><div class="ss2">đã trừ vốn hàng</div></div>
+        <div class="sc tl"><div class="slb">Số đơn</div><div class="sv tl" id="st-ord">0</div><div class="ss2">đơn hàng đã bán</div></div>
+        <div class="sc am"><div class="slb">Hàng đã bán</div><div class="sv am" id="st-qty">0</div><div class="ss2">tổng số lượng</div></div>
+      </div>
+      <div class="cw">
+        <div class="ch"><div class="ct">Doanh thu thực theo sản phẩm (Top 8)</div></div>
+        <div class="bc" id="bar-sale-c"></div>
+      </div>
+      <div class="cw">
+        <div class="ch"><div class="ct">Giá trị tồn kho theo danh mục</div></div>
+        <div class="bc" id="bar-c"></div>
+      </div>
+      <div class="sec-title">🏆 Top sản phẩm theo giá trị tồn kho</div>
+      <div class="tw">
+        <div style="overflow-x:auto">
+          <table><thead><tr><th>#</th><th>Sản phẩm</th><th>Danh mục</th><th>Tồn</th><th>Giá bán</th><th>Giá trị tồn</th><th>Lãi/sp</th><th>Margin</th></tr></thead>
+          <tbody id="top-b"></tbody></table>
+          <div id="st-e" class="empty" style="display:none">📊 Chưa có dữ liệu.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYNC / BACKUP -->
+    <div class="page" id="page-sync">
+      <div class="ph"><div class="pt">CSV <span>& Backup</span></div></div>
+      <div class="sec-title" style="margin-top:0">🔒 Backup & Restore toàn bộ dữ liệu (JSON)</div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Backup dữ liệu (JSON)
+          </div>
+          <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:1rem">Lưu toàn bộ sản phẩm, lịch sử nhập kho và đơn hàng thành file JSON. Restore lại bất cứ lúc nào.</p>
+          <button class="btn bgr" style="width:100%;justify-content:center" onclick="doBackup()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Tải file Backup (.json)
+          </button>
+          <div id="backup-info" style="font-size:11px;color:var(--text3);font-family:var(--fm);margin-top:.6rem;text-align:center"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Restore từ Backup (JSON)
+          </div>
+          <div class="import-area" onclick="document.getElementById('json-file').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Chọn file .json backup</p>
+            <small>⚠️ Sẽ ghi đè toàn bộ dữ liệu hiện tại</small>
+          </div>
+          <input type="file" id="json-file" accept=".json" style="display:none" onchange="doRestore(this.files[0])">
+        </div>
+      </div>
+
+      <div class="sec-title">📊 Xuất / Nhập CSV</div>
+      <div class="info-box">
+        <strong>Đồng bộ với Google Sheets:</strong>
+        <ol>
+          <li>Xuất CSV → Upload Google Drive → Mở bằng Sheets</li>
+          <li>Chỉnh sửa → File → Tải xuống → CSV</li>
+          <li>Kéo thả file CSV vào ô Import bên dưới</li>
+        </ol>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Xuất CSV
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            <button class="btn bp" style="width:100%;justify-content:center" onclick="expFull()">Xuất CSV kho hàng</button>
+            <button class="btn bg2" style="width:100%;justify-content:center" onclick="expOrders()">Xuất CSV đơn hàng</button>
+            <button class="btn bg2" style="width:100%;justify-content:center" onclick="expReport()">Xuất báo cáo doanh thu</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Nhập CSV sản phẩm
+          </div>
+          <div class="import-area" id="drop-z" onclick="document.getElementById('csv-file').click()" ondragover="dragOv(event)" ondragleave="dragLv(event)" ondrop="dropF(event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Kéo thả file CSV vào đây</p>
+            <small>hoặc nhấn để chọn file</small>
+          </div>
+          <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+          <div id="import-preview" style="display:none">
+            <div style="font-size:11px;color:var(--text2);font-family:var(--fm);margin-bottom:.5rem" id="import-info"></div>
+            <div style="display:flex;gap:.5rem">
+              <button class="btn bp" style="flex:1;justify-content:center" id="import-btn" onclick="doImport()">Nhập dữ liệu</button>
+              <button class="btn bg2" onclick="cancelImport()">Hủy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal: Thêm/Sửa sản phẩm -->
+<div class="mo" id="modal">
+  <div class="md">
+    <div class="mtt" id="m-title">Thêm sản phẩm mới</div>
+    <div class="fg">
+      <div class="fgr full"><label>Tên sản phẩm *</label><input id="f-name" placeholder="VD: iPhone 15 Pro Max 256GB"></div>
+      <div class="fgr"><label>SKU / Mã SP</label><input id="f-sku" placeholder="VD: IPH15PM256"></div>
+      <div class="fgr"><label>Danh mục</label>
+        <select id="f-cat">
+          <option>Điện thoại</option><option>Laptop</option><option>Máy tính bảng</option>
+          <option>Phụ kiện</option><option>Tai nghe</option><option>Màn hình</option>
+          <option>Camera</option><option>Khác</option>
+        </select>
+      </div>
+      <div class="fgr"><label>Giá bán (đ)</label><input type="number" id="f-sell" placeholder="0" min="0"></div>
+      <div class="fgr"><label>Giá nhập (đ)</label><input type="number" id="f-buy" placeholder="0" min="0"></div>
+      <div class="fgr"><label>Tồn kho</label><input type="number" id="f-stock" placeholder="0" min="0"></div>
+      <div class="fgr full"><label>Mô tả</label><textarea id="f-desc" rows="2" placeholder="Ghi chú..."></textarea></div>
+    </div>
+    <div class="ma">
+      <button class="btn bg2" onclick="closeMo()">Hủy</button>
+      <button class="btn bp" id="sv-btn" onclick="saveP()">Lưu sản phẩm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nhập kho nhanh -->
+<div class="mo" id="modal-stock">
+  <div class="md wide">
+    <div class="mtt">📥 Nhập kho nhanh</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:1rem">Điều chỉnh tồn kho và ghi lại lịch sử nhập hàng.</div>
+    <div class="fg" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="fgr full"><label>Chọn sản phẩm *</label>
+        <select id="sa-prod" onchange="updateStockAdjPrice()"><option value="">— Chọn sản phẩm —</option></select>
+      </div>
+      <div class="fgr"><label>Loại điều chỉnh</label>
+        <select id="sa-type" onchange="updateStockAdjPreview()">
+          <option value="add">Nhập thêm (+)</option>
+          <option value="set">Đặt số lượng mới</option>
+          <option value="sub">Xuất kho / Trừ (-)</option>
+        </select>
+      </div>
+      <div class="fgr"><label>Số lượng *</label><input type="number" id="sa-qty" placeholder="0" min="1" value="1" oninput="updateStockAdjPreview()"></div>
+      <div class="fgr"><label>Giá nhập (đ/sp)</label><input type="number" id="sa-price" placeholder="0" min="0" oninput="updateStockAdjPreview()"></div>
+      <div class="fgr"><label>Nhà cung cấp</label><input id="sa-sup" placeholder="TGDĐ, FPT Shop..."></div>
+      <div class="fgr"><label>Ngày nhập</label><input type="date" id="sa-date"></div>
+      <div class="fgr full"><label>Ghi chú</label><input id="sa-note" placeholder="Hóa đơn, lô hàng..."></div>
+    </div>
+    <div id="sa-preview" style="background:var(--bg3);border-radius:8px;padding:.75rem;font-size:12px;font-family:var(--fm);color:var(--text2);margin-top:.75rem;display:none"></div>
+    <div class="ma">
+      <button class="btn bg2" onclick="closeStockAdj()">Hủy</button>
+      <button class="btn bam" onclick="saveStockAdj()">✓ Xác nhận nhập kho</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Chi tiết đơn hàng -->
+<div class="mo" id="modal-order">
+  <div class="md wide">
+    <div class="mtt" id="ord-detail-title">Chi tiết đơn hàng</div>
+    <div id="ord-detail-body"></div>
+    <div class="ma"><button class="btn bg2" onclick="document.getElementById('modal-order').classList.remove('open')">Đóng</button></div>
+  </div>
+</div>
+
+<script>
+const SK='elecstore_v3', SK_PH='elecstore_ph_v3', SK_ORD='elecstore_ord_v3';
+let P=[], PH=[], ORD=[], eid=null, importData=[];
+let invSort={col:'name',dir:'asc'};
+let invPage=1, phPage=1, ordPage=1;
+let saleItems=[];
+
+function save(){localStorage.setItem(SK,JSON.stringify(P));stamp();}
+function savePH(){localStorage.setItem(SK_PH,JSON.stringify(PH));}
+function saveORD(){localStorage.setItem(SK_ORD,JSON.stringify(ORD));}
+function load(){
+  try{P=JSON.parse(localStorage.getItem(SK)||'[]');}catch{P=[];}
+  try{PH=JSON.parse(localStorage.getItem(SK_PH)||'[]');}catch{PH=[];}
+  try{ORD=JSON.parse(localStorage.getItem(SK_ORD)||'[]');}catch{ORD=[];}
+}
+function stamp(){document.getElementById('ft-sync').textContent=new Date().toLocaleTimeString('vi-VN');}
+function fmt(n){n=Number(n)||0;if(n>=1e9)return(n/1e9).toFixed(1)+'tỷ';if(n>=1e6)return(n/1e6).toFixed(1)+'tr';return n.toLocaleString('vi-VN')+'đ';}
+function st(s){return s===0?{l:'Hết hàng',c:'dr'}:s<=5?{l:'Sắp hết',c:'da'}:{l:'Còn hàng',c:'dg'};}
+function uid(){return 'SP'+Date.now().toString(36).toUpperCase().slice(-4)+Math.random().toString(36).slice(2,5).toUpperCase();}
+function oid(){return 'DH'+Date.now().toString(36).toUpperCase().slice(-5);}
+function today(){return new Date().toLocaleDateString('vi-VN');}
+function todayISO(){return new Date().toISOString().split('T')[0];}
+
+function toast(msg,type='info'){
+  const c=document.getElementById('toast-c');
+  const el=document.createElement('div');
+  el.className=`toast ${type==='success'?'ok':type==='error'?'err':'info'}`;
+  el.textContent=msg;c.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300);},2800);
+}
+
+function gp(p,el){
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.nav-i').forEach(e=>e.classList.remove('on'));
+  document.getElementById('page-'+p).classList.add('on');
+  el.classList.add('on');
+  if(p==='stats')rstats();
+  if(p==='purchase')rpurchase();
+  if(p==='orders')rorders();
+  if(p==='sale'){if(!saleItems.length)saleItems=[{productId:'',qty:1}];renderSaleItems();updateSaleSummary();}
+}
+
+// ── Pagination ─────────────────────────────────────────────────
+function renderPg(containerId,total,perPage,curPage,setter){
+  const el=document.getElementById(containerId);if(!el)return;
+  const pages=Math.ceil(total/perPage);
+  if(pages<=1){el.innerHTML='';return;}
+  const go=n=>{ setter(n); };
+  let html=`<span class="pg-info">Trang ${curPage}/${pages} — ${total} mục</span>`;
+  html+=`<button class="pg-btn" ${curPage===1?'disabled':''} onclick="(${setter.toString()})(1)">«</button>`;
+  html+=`<button class="pg-btn" ${curPage===1?'disabled':''} onclick="(${setter.toString()})(${curPage-1})">‹</button>`;
+  const s=Math.max(1,curPage-2),e=Math.min(pages,s+4);
+  for(let i=s;i<=e;i++) html+=`<button class="pg-btn ${i===curPage?'on':''}" onclick="(${setter.toString()})(${i})">${i}</button>`;
+  html+=`<button class="pg-btn" ${curPage===pages?'disabled':''} onclick="(${setter.toString()})(${curPage+1})">›</button>`;
+  html+=`<button class="pg-btn" ${curPage===pages?'disabled':''} onclick="(${setter.toString()})(${pages})">»</button>`;
+  el.innerHTML=html;
+}
+
+// ── Inventory ──────────────────────────────────────────────────
+function sortInv(col){
+  if(invSort.col===col)invSort.dir=invSort.dir==='asc'?'desc':'asc';
+  else{invSort.col=col;invSort.dir='asc';}
+  invPage=1;rinv();
+}
+
+function rinv(){
+  const q=(document.getElementById('sq').value||'').toLowerCase();
+  const cat=document.getElementById('scat').value;
+  const perPage=parseInt(document.getElementById('spg').value)||25;
+  let list=P.filter(p=>{
+    const m=!q||p.name.toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q)||p.cat.toLowerCase().includes(q);
+    return m&&(!cat||p.cat===cat);
+  });
+  const {col,dir}=invSort;
+  list.sort((a,b)=>{
+    let va=a[col]??'',vb=b[col]??'';
+    if(typeof va==='number'||typeof vb==='number'){va=Number(va)||0;vb=Number(vb)||0;}
+    else{va=String(va).toLowerCase();vb=String(vb).toLowerCase();}
+    return dir==='asc'?(va<vb?-1:va>vb?1:0):(va>vb?-1:va<vb?1:0);
+  });
+  document.querySelectorAll('#inv-tbl th').forEach(th=>th.classList.remove('sort-asc','sort-desc'));
+  const colMap={name:0,sku:1,cat:2,sell:3,buy:4,stock:5,created:7};
+  const ti=colMap[col];
+  if(ti!==undefined){const ths=document.querySelectorAll('#inv-tbl th');if(ths[ti])ths[ti].classList.add(invSort.dir==='asc'?'sort-asc':'sort-desc');}
+  const total=list.length;
+  if(invPage>Math.ceil(total/perPage)&&total>0)invPage=1;
+  const paged=perPage>=999?list:list.slice((invPage-1)*perPage,invPage*perPage);
+  const b=document.getElementById('inv-b');b.innerHTML='';
+  document.getElementById('inv-e').style.display=total?'none':'block';
+  paged.forEach(p=>{
+    const s=st(p.stock||0),tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="tn">${p.name}</div><div style="font-size:10px;color:var(--text3);margin-top:1px">${p.desc||''}</div></td>
+      <td class="tm">${p.sku||'—'}</td>
+      <td><span class="bdg db">${p.cat}</span></td>
+      <td class="tm" style="color:var(--green)">${fmt(p.sell)}</td>
+      <td class="tm" style="color:var(--text3)">${fmt(p.buy)}</td>
+      <td class="tm" style="font-weight:600;color:${(p.stock||0)<=5?'var(--amber)':'var(--text)'}">${p.stock||0}</td>
+      <td><span class="bdg ${s.c}">${s.l}</span></td>
+      <td class="tm" style="color:var(--text3)">${p.created||'—'}</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn bg2 bsm" onclick="openEdit('${p.id}')">Sửa</button>
+        <button class="btn bd bsm" onclick="delP('${p.id}')">Xóa</button>
+      </div></td>`;
+    b.appendChild(tr);
+  });
+  document.getElementById('s-t').textContent=P.length;
+  document.getElementById('s-s').textContent=P.filter(p=>(p.stock||0)>0).length;
+  const low=P.filter(p=>(p.stock||0)>0&&(p.stock||0)<=5).length;
+  document.getElementById('s-l').textContent=low;
+  document.getElementById('s-v').textContent=fmt(P.reduce((s,p)=>s+(p.buy||0)*(p.stock||0),0));
+  const w=document.getElementById('lw');
+  if(low>0){w.style.display='flex';document.getElementById('ln').textContent=low;}else w.style.display='none';
+  renderPg('inv-pg',total,perPage,invPage,function(n){invPage=n;rinv();});
+}
+
+// ── Product CRUD ───────────────────────────────────────────────
+function openAdd(){eid=null;document.getElementById('m-title').textContent='Thêm sản phẩm mới';['f-name','f-sku','f-sell','f-buy','f-stock','f-desc'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-cat').value='Điện thoại';document.getElementById('modal').classList.add('open');setTimeout(()=>document.getElementById('f-name').focus(),50);}
+function openEdit(id){eid=id;const p=P.find(x=>x.id===id);document.getElementById('m-title').textContent='Chỉnh sửa sản phẩm';document.getElementById('f-name').value=p.name;document.getElementById('f-sku').value=p.sku||'';document.getElementById('f-cat').value=p.cat;document.getElementById('f-sell').value=p.sell||0;document.getElementById('f-buy').value=p.buy||0;document.getElementById('f-stock').value=p.stock||0;document.getElementById('f-desc').value=p.desc||'';document.getElementById('modal').classList.add('open');}
+function closeMo(){document.getElementById('modal').classList.remove('open');eid=null;}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeMo();});
+function saveP(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){toast('Vui lòng nhập tên sản phẩm!','error');return;}
+  const btn=document.getElementById('sv-btn');btn.disabled=true;btn.textContent='Đang lưu...';
+  const d={name,sku:document.getElementById('f-sku').value.trim(),cat:document.getElementById('f-cat').value,sell:parseFloat(document.getElementById('f-sell').value)||0,buy:parseFloat(document.getElementById('f-buy').value)||0,stock:parseInt(document.getElementById('f-stock').value)||0,desc:document.getElementById('f-desc').value.trim()};
+  if(eid){const i=P.findIndex(p=>p.id===eid);P[i]={...P[i],...d};toast('Đã cập nhật ✓','success');}
+  else{d.id=uid();d.created=today();P.push(d);toast('Đã thêm ✓','success');}
+  save();btn.disabled=false;btn.textContent='Lưu sản phẩm';closeMo();rinv();
+}
+function delP(id){if(!confirm('Xóa sản phẩm này?'))return;P=P.filter(p=>p.id!==id);save();toast('Đã xóa','info');rinv();}
+
+// ── Stock Adjustment ───────────────────────────────────────────
+function openStockAdj(){
+  const sel=document.getElementById('sa-prod');
+  sel.innerHTML='<option value="">— Chọn sản phẩm —</option>';
+  P.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=`${p.name} (tồn: ${p.stock||0})`;sel.appendChild(o);});
+  document.getElementById('sa-date').value=todayISO();
+  document.getElementById('sa-qty').value=1;
+  document.getElementById('sa-price').value='';
+  document.getElementById('sa-sup').value='';
+  document.getElementById('sa-note').value='';
+  document.getElementById('sa-type').value='add';
+  document.getElementById('sa-preview').style.display='none';
+  document.getElementById('modal-stock').classList.add('open');
+}
+function closeStockAdj(){document.getElementById('modal-stock').classList.remove('open');}
+document.getElementById('modal-stock').addEventListener('click',e=>{if(e.target===document.getElementById('modal-stock'))closeStockAdj();});
+
+function updateStockAdjPrice(){
+  const p=P.find(x=>x.id===document.getElementById('sa-prod').value);
+  if(p)document.getElementById('sa-price').value=p.buy||0;
+  updateStockAdjPreview();
+}
+function updateStockAdjPreview(){
+  const id=document.getElementById('sa-prod').value;
+  const p=P.find(x=>x.id===id);
+  const prev=document.getElementById('sa-preview');
+  if(!p){prev.style.display='none';return;}
+  const qty=parseInt(document.getElementById('sa-qty').value)||0;
+  const price=parseFloat(document.getElementById('sa-price').value)||0;
+  const type=document.getElementById('sa-type').value;
+  const cur=p.stock||0;
+  let after=cur;
+  if(type==='add')after=cur+qty;
+  else if(type==='set')after=qty;
+  else if(type==='sub')after=Math.max(0,cur-qty);
+  const total=type!=='sub'?price*qty:0;
+  prev.style.display='block';
+  prev.innerHTML=`Tồn hiện tại: <b style="color:var(--text)">${cur}</b> → Sau: <b style="color:var(--amber)">${after}</b>${type!=='sub'?` | Thành tiền: <b style="color:var(--teal)">${fmt(total)}</b>`:''}`;
+}
+function saveStockAdj(){
+  const id=document.getElementById('sa-prod').value;
+  if(!id){toast('Chọn sản phẩm!','error');return;}
+  const p=P.find(x=>x.id===id);if(!p)return;
+  const qty=parseInt(document.getElementById('sa-qty').value)||0;
+  const price=parseFloat(document.getElementById('sa-price').value)||0;
+  const type=document.getElementById('sa-type').value;
+  if(qty<=0){toast('Số lượng phải > 0!','error');return;}
+  const cur=p.stock||0;
+  let after=cur;
+  if(type==='add')after=cur+qty;
+  else if(type==='set')after=qty;
+  else if(type==='sub')after=Math.max(0,cur-qty);
+  const idx=P.findIndex(x=>x.id===id);P[idx].stock=after;save();
+  if(type!=='sub'){
+    PH.unshift({
+      id:'PH'+Date.now().toString(36).toUpperCase().slice(-6),
+      productId:id,productName:p.name,qty,price,total:price*qty,
+      supplier:document.getElementById('sa-sup').value.trim()||'—',
+      note:document.getElementById('sa-note').value.trim(),
+      date:new Date(document.getElementById('sa-date').value||todayISO()).toLocaleDateString('vi-VN'),
+      dateISO:document.getElementById('sa-date').value||todayISO()
+    });
+    savePH();
+  }
+  toast(`Tồn kho: ${cur} → ${after} ✓`,'success');
+  closeStockAdj();rinv();
+}
+
+// ── Purchase History ───────────────────────────────────────────
+function rpurchase(){
+  const q=(document.getElementById('phq').value||'').toLowerCase();
+  const perPage=25;
+  let list=PH.filter(r=>!q||r.productName.toLowerCase().includes(q)||(r.supplier||'').toLowerCase().includes(q));
+  document.getElementById('ph-cnt').textContent=PH.length;
+  document.getElementById('ph-total').textContent=fmt(PH.reduce((s,r)=>s+(r.total||0),0));
+  document.getElementById('ph-qty').textContent=PH.reduce((s,r)=>s+(r.qty||0),0);
+  const sups=new Set(PH.filter(r=>r.supplier&&r.supplier!=='—').map(r=>r.supplier));
+  document.getElementById('ph-sup').textContent=sups.size;
+  const total=list.length;
+  const paged=list.slice((phPage-1)*perPage,phPage*perPage);
+  const b=document.getElementById('ph-b');b.innerHTML='';
+  document.getElementById('ph-e').style.display=total?'none':'block';
+  paged.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="tm" style="color:var(--text3)">${r.date}</td><td><div class="tn">${r.productName}</div></td><td class="tm" style="color:var(--amber);font-weight:600">+${r.qty}</td><td class="tm" style="color:var(--text3)">${fmt(r.price)}</td><td class="tm" style="color:var(--teal)">${fmt(r.total)}</td><td style="font-size:12px">${r.supplier||'—'}</td><td style="font-size:11.5px;color:var(--text3)">${r.note||'—'}</td>`;
+    b.appendChild(tr);
+  });
+  renderPg('ph-pg',total,perPage,phPage,function(n){phPage=n;rpurchase();});
+}
+
+// ── Sale ───────────────────────────────────────────────────────
+function addSaleItem(){saleItems.push({productId:'',qty:1});renderSaleItems();}
+function renderSaleItems(){
+  const c=document.getElementById('sale-items-c');c.innerHTML='';
+  saleItems.forEach((item,i)=>{
+    const div=document.createElement('div');div.className='sale-item';
+    const opts=P.map(p=>`<option value="${p.id}" ${item.productId===p.id?'selected':''}>${p.name} (tồn:${p.stock||0}) — ${fmt(p.sell)}</option>`).join('');
+    div.innerHTML=`
+      <select style="flex:3" onchange="saleItems[${i}].productId=this.value;updateSaleSummary()"><option value="">— Chọn SP —</option>${opts}</select>
+      <input type="number" value="${item.qty}" min="1" placeholder="SL" style="width:65px" onchange="saleItems[${i}].qty=Math.max(1,parseInt(this.value)||1);updateSaleSummary()">
+      <button class="sale-rm" onclick="saleItems.splice(${i},1);renderSaleItems();updateSaleSummary()">✕</button>`;
+    c.appendChild(div);
+  });
+  updateSaleSummary();
+}
+function updateSaleSummary(){
+  const discVal=parseFloat(document.getElementById('sale-disc').value)||0;
+  const discType=document.getElementById('sale-disc-type').value;
+  let subtotal=0,totalCost=0;const valid=[];
+  saleItems.forEach(item=>{
+    if(!item.productId)return;
+    const p=P.find(x=>x.id===item.productId);if(!p)return;
+    const qty=item.qty||1,line=(p.sell||0)*qty,cost=(p.buy||0)*qty;
+    subtotal+=line;totalCost+=cost;valid.push({p,qty,line,cost});
+  });
+  let disc=discType==='pct'?(subtotal*discVal/100):discVal;
+  disc=Math.max(0,Math.min(disc,subtotal));
+  const total=subtotal-disc,profit=total-totalCost;
+  const c=document.getElementById('sale-summary');
+  if(!valid.length){c.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:.5rem">Chưa chọn sản phẩm</div>';return;}
+  let html='';
+  valid.forEach(({p,qty,line})=>{
+    html+=`<div style="display:flex;justify-content:space-between;font-size:12px;padding:.25rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">${p.name} × ${qty}</span><span>${fmt(line)}</span></div>`;
+  });
+  html+=`<div style="display:flex;justify-content:space-between;font-size:12px;padding:.3rem 0;color:var(--text2)"><span>Tạm tính</span><span>${fmt(subtotal)}</span></div>`;
+  if(disc>0)html+=`<div style="display:flex;justify-content:space-between;font-size:12px;padding:.2rem 0;color:var(--red)"><span>Giảm giá</span><span>-${fmt(disc)}</span></div>`;
+  html+=`<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;padding:.4rem 0;border-top:1px solid var(--border2)"><span>Tổng cộng</span><span style="color:var(--green)">${fmt(total)}</span></div>`;
+  html+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:.2rem 0;color:var(--teal)"><span>Lợi nhuận</span><span>${fmt(profit)}</span></div>`;
+  c.innerHTML=html;
+}
+function submitSale(){
+  const valid=saleItems.filter(x=>x.productId);
+  if(!valid.length){toast('Chọn ít nhất 1 sản phẩm!','error');return;}
+  for(const item of valid){
+    const p=P.find(x=>x.id===item.productId);
+    if(!p){toast('Sản phẩm không tồn tại!','error');return;}
+    if((p.stock||0)<(item.qty||1)){toast(`"${p.name}" không đủ tồn kho (còn ${p.stock})!`,'error');return;}
+  }
+  const discVal=parseFloat(document.getElementById('sale-disc').value)||0;
+  const discType=document.getElementById('sale-disc-type').value;
+  const cust=document.getElementById('sale-cust').value.trim()||'Khách lẻ';
+  const phone=document.getElementById('sale-phone').value.trim();
+  const note=document.getElementById('sale-note').value.trim();
+  const pay=document.getElementById('sale-pay').value;
+  let subtotal=0,totalCost=0,totalQty=0;const items=[];
+  valid.forEach(item=>{
+    const p=P.find(x=>x.id===item.productId);
+    const qty=item.qty||1,line=(p.sell||0)*qty,cost=(p.buy||0)*qty;
+    subtotal+=line;totalCost+=cost;totalQty+=qty;
+    items.push({productId:p.id,name:p.name,qty,sellPrice:p.sell,buyPrice:p.buy,line,cost});
+    const idx=P.findIndex(x=>x.id===p.id);P[idx].stock=Math.max(0,(P[idx].stock||0)-qty);
+  });
+  let disc=discType==='pct'?(subtotal*discVal/100):discVal;
+  disc=Math.max(0,Math.min(disc,subtotal));
+  const total=subtotal-disc,profit=total-totalCost;
+  const order={id:oid(),date:today(),dateISO:todayISO(),customer:cust,phone,note,payment:pay,items,subtotal,discount:disc,total,cost:totalCost,profit,qty:totalQty};
+  ORD.unshift(order);save();saveORD();
+  toast(`Đơn ${order.id} tạo thành công ✓`,'success');
+  clearSale();rinv();
+}
+function clearSale(){
+  saleItems=[{productId:'',qty:1}];
+  ['sale-disc','sale-cust','sale-phone','sale-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sale-pay').value='Tiền mặt';
+  renderSaleItems();updateSaleSummary();
+}
+
+// ── Order History ──────────────────────────────────────────────
+function rorders(){
+  const q=(document.getElementById('ordq').value||'').toLowerCase();
+  const payF=document.getElementById('ord-pay-f').value;
+  const perPage=25;
+  let list=ORD.filter(o=>{
+    const mq=!q||o.id.toLowerCase().includes(q)||o.customer.toLowerCase().includes(q)||(o.phone||'').includes(q);
+    return mq&&(!payF||o.payment===payF);
+  });
+  const totRev=ORD.reduce((s,o)=>s+(o.total||0),0);
+  const totProfit=ORD.reduce((s,o)=>s+(o.profit||0),0);
+  document.getElementById('ord-rev').textContent=fmt(totRev);
+  document.getElementById('ord-profit').textContent=fmt(totProfit);
+  document.getElementById('ord-cnt').textContent=ORD.length;
+  document.getElementById('ord-avg').textContent=ORD.length?fmt(totRev/ORD.length):'0đ';
+  const total=list.length;
+  const paged=list.slice((ordPage-1)*perPage,ordPage*perPage);
+  const b=document.getElementById('ord-b');b.innerHTML='';
+  document.getElementById('ord-e').style.display=total?'none':'block';
+  paged.forEach(o=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="tm" style="color:var(--accent)">${o.id}</td><td class="tm" style="color:var(--text3)">${o.date}</td><td><div class="tn">${o.customer}</div>${o.phone?`<div style="font-size:10px;color:var(--text3)">${o.phone}</div>`:''}</td><td class="tm">${o.qty} sp</td><td class="tm" style="color:var(--green);font-weight:700">${fmt(o.total)}</td><td class="tm" style="color:${o.profit>=0?'var(--teal)':'var(--red)'}">${fmt(o.profit)}</td><td class="tm" style="color:var(--red)">${o.discount>0?'-'+fmt(o.discount):'—'}</td><td><span class="bdg dt">${o.payment}</span></td><td><button class="btn bg2 bsm" onclick="showOrderDetail('${o.id}')">Chi tiết</button></td>`;
+    b.appendChild(tr);
+  });
+  renderPg('ord-pg',total,perPage,ordPage,function(n){ordPage=n;rorders();});
+}
+function showOrderDetail(id){
+  const o=ORD.find(x=>x.id===id);if(!o)return;
+  document.getElementById('ord-detail-title').textContent=`Đơn ${o.id} — ${o.date}`;
+  let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem;font-size:12.5px"><div><span style="color:var(--text3)">Khách:</span> <b>${o.customer}</b></div><div><span style="color:var(--text3)">SĐT:</span> ${o.phone||'—'}</div><div><span style="color:var(--text3)">Thanh toán:</span> <span class="bdg dt">${o.payment}</span></div><div><span style="color:var(--text3)">Ghi chú:</span> ${o.note||'—'}</div></div>`;
+  html+=`<div class="receipt">`;
+  o.items.forEach(item=>{html+=`<div class="receipt-row"><span>${item.name} × ${item.qty}</span><span>${fmt(item.line)}</span></div>`;});
+  if(o.discount>0)html+=`<div class="receipt-row" style="color:var(--red)"><span>Giảm giá</span><span>-${fmt(o.discount)}</span></div>`;
+  html+=`<div class="receipt-row"><span>TỔNG CỘNG</span><span style="color:var(--green)">${fmt(o.total)}</span></div>`;
+  html+=`<div class="receipt-row" style="font-size:11px;color:var(--teal);font-weight:normal"><span>Lợi nhuận</span><span>${fmt(o.profit)}</span></div></div>`;
+  document.getElementById('ord-detail-body').innerHTML=html;
+  document.getElementById('modal-order').classList.add('open');
+}
+document.getElementById('modal-order').addEventListener('click',e=>{if(e.target===document.getElementById('modal-order'))document.getElementById('modal-order').classList.remove('open');});
+
+// ── Stats ──────────────────────────────────────────────────────
+function rstats(){
+  const rev=P.reduce((s,p)=>s+(p.sell||0)*(p.stock||0),0);
+  const cost=P.reduce((s,p)=>s+(p.buy||0)*(p.stock||0),0);
+  const ms=P.filter(p=>(p.sell||0)>0).map(p=>((p.sell-p.buy)/p.sell*100));
+  const am=ms.length?ms.reduce((a,b)=>a+b,0)/ms.length:0;
+  document.getElementById('r-r').textContent=fmt(rev);
+  document.getElementById('r-p').textContent=fmt(rev-cost);
+  document.getElementById('r-c').textContent=fmt(cost);
+  document.getElementById('r-m').textContent=am.toFixed(1)+'%';
+  const totRev=ORD.reduce((s,o)=>s+(o.total||0),0);
+  const totProfit=ORD.reduce((s,o)=>s+(o.profit||0),0);
+  const totQty=ORD.reduce((s,o)=>s+(o.qty||0),0);
+  document.getElementById('st-rev').textContent=fmt(totRev);
+  document.getElementById('st-profit').textContent=fmt(totProfit);
+  document.getElementById('st-ord').textContent=ORD.length;
+  document.getElementById('st-qty').textContent=totQty;
+  // Bar: sales
+  const prodSales={};
+  ORD.forEach(o=>o.items.forEach(item=>{prodSales[item.name]=(prodSales[item.name]||0)+item.line;}));
+  const saleEnts=Object.entries(prodSales).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const sMax=Math.max(...saleEnts.map(e=>e[1]),1);
+  document.getElementById('bar-sale-c').innerHTML=saleEnts.length?saleEnts.map(([n,v])=>`<div class="bcol"><div class="bv">${fmt(v)}</div><div class="bar green" style="height:${Math.max(3,v/sMax*120)}px" title="${n}"></div><div class="bl2">${n}</div></div>`).join(''):'<div style="color:var(--text3);font-family:var(--fm);font-size:12px;margin:auto">Chưa có đơn hàng</div>';
+  // Bar: inventory
+  const cats={};P.forEach(p=>{cats[p.cat]=(cats[p.cat]||0)+(p.sell||0)*(p.stock||0);});
+  const ents=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const mx=Math.max(...ents.map(e=>e[1]),1);
+  document.getElementById('bar-c').innerHTML=ents.length?ents.map(([n,v])=>`<div class="bcol"><div class="bv">${fmt(v)}</div><div class="bar" style="height:${Math.max(3,v/mx*120)}px"></div><div class="bl2">${n}</div></div>`).join(''):'<div style="color:var(--text3);font-family:var(--fm);font-size:12px;margin:auto">Chưa có dữ liệu</div>';
+  // Top table
+  const sorted=[...P].sort((a,b)=>((b.sell||0)*(b.stock||0))-((a.sell||0)*(a.stock||0)));
+  const tb=document.getElementById('top-b');tb.innerHTML='';
+  document.getElementById('st-e').style.display=sorted.length?'none':'block';
+  sorted.slice(0,20).forEach((p,i)=>{
+    const v=(p.sell||0)*(p.stock||0),l=(p.sell||0)-(p.buy||0);
+    const mg=(p.sell||0)>0?((l/p.sell)*100).toFixed(1):'0.0';
+    const mc=parseFloat(mg)>=20?'dg':parseFloat(mg)>=10?'da':'dr';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="tm" style="color:var(--text3)">${i+1}</td><td><div class="tn">${p.name}</div></td><td><span class="bdg db">${p.cat}</span></td><td class="tm">${p.stock||0}</td><td class="tm" style="color:var(--green)">${fmt(p.sell)}</td><td class="tm" style="color:var(--accent)">${fmt(v)}</td><td class="tm" style="color:${l>=0?'var(--green)':'var(--red)'}">${fmt(l)}</td><td><span class="bdg ${mc}">${mg}%</span></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ── Backup & Restore ───────────────────────────────────────────
+function doBackup(){
+  const data={version:3,exported:new Date().toISOString(),products:P,purchaseHistory:PH,orders:ORD};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='ElecStore_Backup_'+today().replace(/\//g,'-')+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+  document.getElementById('backup-info').textContent=`✓ ${P.length} SP · ${PH.length} nhập kho · ${ORD.length} đơn hàng`;
+  toast('Đã tải file backup ✓','success');
+}
+function doRestore(file){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.products&&!data.orders){toast('File backup không hợp lệ!','error');return;}
+      if(!confirm(`Restore sẽ ghi đè toàn bộ dữ liệu.\n\nBackup: ${data.products?.length||0} SP, ${data.purchaseHistory?.length||0} nhập kho, ${data.orders?.length||0} đơn.\n\nTiếp tục?`))return;
+      P=data.products||[];PH=data.purchaseHistory||[];ORD=data.orders||[];
+      save();savePH();saveORD();
+      toast(`Restore thành công ✓`,'success');rinv();
+    }catch(err){toast('Lỗi file backup: '+err.message,'error');}
+  };
+  r.readAsText(file,'utf-8');
+  document.getElementById('json-file').value='';
+}
+
+// ── CSV Export ─────────────────────────────────────────────────
+function dlcsv(rows,name){
+  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=name;a.click();URL.revokeObjectURL(a.href);
+}
+function expFull(){
+  if(!P.length){toast('Không có sản phẩm','error');return;}
+  const rows=[['ID','Tên sản phẩm','SKU','Danh mục','Giá bán','Giá nhập','Tồn kho','Giá trị tồn','Lãi/sp','Margin %','Trạng thái','Mô tả','Ngày thêm']];
+  P.forEach(p=>{const tv=(p.sell||0)*(p.stock||0),li=(p.sell||0)-(p.buy||0);const mg=(p.sell||0)>0?((li/p.sell)*100).toFixed(1):'0.0';const s=(p.stock||0)===0?'Hết hàng':(p.stock||0)<=5?'Sắp hết':'Còn hàng';rows.push([p.id||'',p.name,p.sku||'',p.cat,p.sell||0,p.buy||0,p.stock||0,tv,li,mg+'%',s,p.desc||'',p.created||'']);});
+  dlcsv(rows,'ElecStore_SanPham_'+today().replace(/\//g,'-')+'.csv');toast('Đã xuất CSV ✓','success');
+}
+function expOrders(){
+  if(!ORD.length){toast('Không có đơn hàng','error');return;}
+  const rows=[['Mã đơn','Ngày bán','Khách hàng','SĐT','Sản phẩm','Số lượng','Doanh thu','Giảm giá','Tổng thu','Vốn','Lợi nhuận','Thanh toán','Ghi chú']];
+  ORD.forEach(o=>{const names=o.items.map(i=>`${i.name}×${i.qty}`).join('; ');rows.push([o.id,o.date,o.customer,o.phone||'',names,o.qty,o.subtotal,o.discount,o.total,o.cost,o.profit,o.payment,o.note||'']);});
+  dlcsv(rows,'ElecStore_DonHang_'+today().replace(/\//g,'-')+'.csv');toast('Đã xuất CSV đơn hàng ✓','success');
+}
+function expReport(){
+  if(!P.length){toast('Không có sản phẩm','error');return;}
+  const rows=[['Sản phẩm','Danh mục','Tồn kho','Giá bán','Giá nhập','Doanh thu ước tính','Vốn nhập','Lợi nhuận','Margin %']];
+  [...P].sort((a,b)=>((b.sell||0)*(b.stock||0))-((a.sell||0)*(a.stock||0))).forEach(p=>{const r=(p.sell||0)*(p.stock||0),c=(p.buy||0)*(p.stock||0);const mg=(p.sell||0)>0?(((p.sell-p.buy)/p.sell)*100).toFixed(1)+'%':'0%';rows.push([p.name,p.cat,p.stock||0,p.sell||0,p.buy||0,r,c,r-c,mg]);});
+  dlcsv(rows,'ElecStore_BaoCao_'+today().replace(/\//g,'-')+'.csv');toast('Đã xuất báo cáo ✓','success');
+}
+
+// ── CSV Import ─────────────────────────────────────────────────
+function dragOv(e){e.preventDefault();document.getElementById('drop-z').classList.add('drag');}
+function dragLv(e){document.getElementById('drop-z').classList.remove('drag');}
+function dropF(e){e.preventDefault();dragLv();const f=e.dataTransfer.files[0];if(f)handleFile(f);}
+function handleFile(file){
+  if(!file||!file.name.endsWith('.csv')){toast('Vui lòng chọn file CSV','error');return;}
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const lines=e.target.result.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+      if(lines.length<2){toast('File CSV trống','error');return;}
+      function parseRow(line){const cells=[];let cur='',inQ=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}else if(c===','&&!inQ){cells.push(cur.trim());cur='';}else cur+=c;}cells.push(cur.trim());return cells;}
+      const header=parseRow(lines[0]).map(h=>h.toLowerCase().replace(/[^a-z0-9]/g,''));
+      const ci={id:header.findIndex(h=>h.includes('id')),name:header.findIndex(h=>h.includes('ten')||h.includes('name')||h.includes('sanpham')),sku:header.findIndex(h=>h.includes('sku')||h.includes('ma')),cat:header.findIndex(h=>h.includes('danhmuc')||h.includes('category')||h.includes('loai')),sell:header.findIndex(h=>h.includes('giaban')||h.includes('sell')),buy:header.findIndex(h=>h.includes('gianhap')||h.includes('buy')||h.includes('nhap')),stock:header.findIndex(h=>h.includes('tonkho')||h.includes('stock')||h.includes('ton')),desc:header.findIndex(h=>h.includes('mota')||h.includes('desc')),created:header.findIndex(h=>h.includes('ngay')||h.includes('date'))};
+      if(ci.name<0)ci.name=1;if(ci.sku<0)ci.sku=2;if(ci.cat<0)ci.cat=3;if(ci.sell<0)ci.sell=4;if(ci.buy<0)ci.buy=5;if(ci.stock<0)ci.stock=6;
+      importData=[];
+      for(let i=1;i<lines.length;i++){const row=parseRow(lines[i]);const name=row[ci.name]?.trim()||'';if(!name)continue;importData.push({id:row[ci.id]?.trim()||uid(),name,sku:row[ci.sku]?.trim()||'',cat:row[ci.cat]?.trim()||'Khác',sell:parseFloat((row[ci.sell]||'').replace(/[^0-9.]/g,''))||0,buy:parseFloat((row[ci.buy]||'').replace(/[^0-9.]/g,''))||0,stock:parseInt((row[ci.stock]||'').replace(/[^0-9]/g,''))||0,desc:ci.desc>=0?row[ci.desc]?.trim()||'':'',created:ci.created>=0&&row[ci.created]?.trim()?row[ci.created].trim():today()});}
+      if(!importData.length){toast('Không đọc được dữ liệu','error');return;}
+      document.getElementById('import-info').textContent=`Đọc được ${importData.length} sản phẩm từ "${file.name}"`;
+      document.getElementById('import-preview').style.display='block';
+      document.getElementById('import-btn').textContent=`Nhập ${importData.length} sản phẩm`;
+    }catch(err){toast('Lỗi đọc file: '+err.message,'error');}
+  };
+  r.readAsText(file,'utf-8');
+}
+function doImport(){
+  if(!importData.length)return;
+  const mode=confirm(`Nhập ${importData.length} sản phẩm.\n\nOK = Ghi đè toàn bộ\nHủy = Thêm vào hiện tại`);
+  if(mode){P=importData;toast(`Đã ghi đè ${P.length} sản phẩm ✓`,'success');}
+  else{const existing=new Map(P.map(p=>[p.id,p]));importData.forEach(p=>{existing.set(p.id,{...existing.get(p.id)||{},...p});});P=[...existing.values()];toast(`Đã đồng bộ ${importData.length} sản phẩm ✓`,'success');}
+  save();cancelImport();rinv();
+}
+function cancelImport(){importData=[];document.getElementById('import-preview').style.display='none';document.getElementById('csv-file').value='';}
+
+// ── Init ───────────────────────────────────────────────────────
+(function init(){
+  load();
+  if(!P.length){
+    P=[
+      {id:'SP001',name:'iPhone 15 Pro Max 256GB',sku:'IPH15PM256',cat:'Điện thoại',sell:29990000,buy:25000000,stock:8,desc:'Màu Titan Đen',created:'01/01/2025'},
+      {id:'SP002',name:'Samsung Galaxy S24 Ultra',sku:'SS-S24U',cat:'Điện thoại',sell:26990000,buy:22000000,stock:5,desc:'RAM 12GB 256GB',created:'01/01/2025'},
+      {id:'SP003',name:'MacBook Pro M3 14 inch',sku:'MBP-M3-14',cat:'Laptop',sell:49990000,buy:43000000,stock:3,desc:'18GB RAM 512GB SSD',created:'02/01/2025'},
+      {id:'SP004',name:'AirPods Pro 2nd Gen',sku:'APP-2GEN',cat:'Tai nghe',sell:6490000,buy:5200000,stock:15,desc:'USB-C Case',created:'03/01/2025'},
+      {id:'SP005',name:'iPad Air M2 11 inch',sku:'IPAD-AIR-M2',cat:'Máy tính bảng',sell:17990000,buy:15000000,stock:2,desc:'WiFi 256GB',created:'04/01/2025'},
+      {id:'SP006',name:'Dell XPS 15 i7-13700H',sku:'DELL-XPS15',cat:'Laptop',sell:38990000,buy:33000000,stock:4,desc:'RTX 4060 32GB RAM',created:'04/01/2025'},
+      {id:'SP007',name:'Cáp USB-C 100W 2m',sku:'CAP-USBC-100',cat:'Phụ kiện',sell:290000,buy:150000,stock:50,desc:'Hỗ trợ PD fast charge',created:'05/01/2025'},
+    ];
+    save();
+  }
+  const lo=document.getElementById('lo');
+  lo.style.opacity='0';setTimeout(()=>lo.style.display='none',400);
+  saleItems=[{productId:'',qty:1}];
+  rinv();
+})();
+</script>
+</body>
+</html>
